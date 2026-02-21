@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>汽车跑酷游戏</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <div id="start-screen">
+            <h1>🚗 汽车跑酷</h1>
+            <p>使用方向键控制汽车移动</p>
+            <p>↑ 加速 | ↓ 减速 | ← 左移 | → 右移</p>
+            <p>避开行人、动物和路障！</p>
+            <div id="car-selection">
+                <p>选择你的车辆：</p>
+                <div class="car-options">
+                    <div class="car-option" data-car="sports">
+                        <div class="car-preview sports"></div>
+                        <span>跑车</span>
+                    </div>
+                    <div class="car-option" data-car="sedan">
+                        <div class="car-preview sedan"></div>
+                        <span>轿车</span>
+                    </div>
+                    <div class="car-option" data-car="truck">
+                        <div class="car-preview truck"></div>
+                        <span>卡车</span>
+                    </div>
+                    <div class="car-option" data-car="suv">
+                        <div class="car-preview suv"></div>
+                        <span>SUV</span>
+                    </div>
+                </div>
+            </div>
+            <button id="start-btn">开始游戏</button>
+        </div>
+        
+        <div id="game-ui">
+            <div id="score">分数: 0</div>
+            <div id="speed">速度: 0</div>
+        </div>
+        
+        <canvas id="game-canvas"></canvas>
+        
+        <div id="game-over-screen">
+            <h1>游戏结束</h1>
+            <p>最终分数: <span id="final-score">0</span></p>
+            <button id="restart-btn">重新开始</button>
+        </div>
+    </div>
+    
+    <script src="game.js"></script>
+</body>
+</html
