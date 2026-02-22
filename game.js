@@ -10,6 +10,23 @@ const LANE_WIDTH = 175;
 const OBSTACLE_WIDTH = 160;
 const OBSTACLE_HEIGHT = 70;
 
+let carImages = {};
+let carImageFiles = {
+    sports: 'image/carRace-cars/cars_0004.png',
+    sedan: 'image/carRace-cars/cars_0000.png',
+    truck: 'image/carRace-cars/cars_0007.png',
+    suv: 'image/carRace-cars/cars_0002.png',
+    car4: 'image/carRace-cars/cars_0001.png',
+    car5: 'image/carRace-cars/cars_0003.png',
+    car6: 'image/carRace-cars/cars_0005.png',
+    car7: 'image/carRace-cars/cars_0006.png'
+};
+
+Object.keys(carImageFiles).forEach(type => {
+    carImages[type] = new Image();
+    carImages[type].src = carImageFiles[type];
+});
+
 let gameRunning = false;
 let score = 0;
 let roadOffset = 0;
@@ -225,12 +242,19 @@ let obstacleTimer = 0;
 let obstacleInterval = 60;
 let barrierTimer = 0;
 let barrierType = 'full';
+let powerUps = [];
+let powerUpTimer = 0;
+let powerUpInterval = 900;
 let collisionResistance = 0;
 let screenShake = 0;
 let collisionFlash = 0;
 let isGameOver = false;
 let isPaused = false;
 let currentLang = 'zh';
+let isInvincible = false;
+let invincibleTimer = 0;
+let scoreMultiplier = 1;
+let scoreMultiplierTimer = 0;
 
 let selectedCarType = 'sedan';
 
@@ -245,10 +269,16 @@ const translations = {
         'sedan': '轿车',
         'truck': '卡车',
         'suv': 'SUV',
+        'sports-ability': '小巧快速，无护盾',
+        'sedan-ability': '平衡型，基础属性',
+        'truck-ability': '大型车辆，2次护盾',
+        'suv-ability': '中型车辆，1次护盾',
         'start': '开始游戏',
         'score': '分数: 0',
         'speed': '速度: 0',
         'shield': '护盾: 0',
+        'invincible': '无敌: 3s',
+        'multiplier': '分数翻倍: 5s',
         'pause': '暂停 (P)',
         'game-over': '游戏结束',
         'final-score': '最终分数: 0',
@@ -265,10 +295,16 @@ const translations = {
         'sedan': 'Sedan',
         'truck': 'Truck',
         'suv': 'SUV',
+        'sports-ability': 'Small & Fast, No Shield',
+        'sedan-ability': 'Balanced, Basic Stats',
+        'truck-ability': 'Large, 2 Shields',
+        'suv-ability': 'Medium, 1 Shield',
         'start': 'Start Game',
         'score': 'Score: 0',
         'speed': 'Speed: 0',
         'shield': 'Shield: 0',
+        'invincible': 'Invincible: 3s',
+        'multiplier': 'Score x2: 5s',
         'pause': 'Pause (P)',
         'game-over': 'Game Over',
         'final-score': 'Final Score: 0',
@@ -388,16 +424,40 @@ function drawRoad() {
 function drawCar() {
     ctx.save();
     
-    const centerX = car.x + car.width / 2;
+    if (isInvincible) {
+        ctx.globalAlpha = 0.5 + Math.sin(Date.now() / 100) * 0.5;
+        ctx.shadowColor = '#ffff00';
+        ctx.shadowBlur = 20;
+    }
     
-    if (selectedCarType === 'sports') {
-        drawSportsCar();
-    } else if (selectedCarType === 'sedan') {
-        drawSedanCar();
-    } else if (selectedCarType === 'truck') {
-        drawTruckCar();
-    } else if (selectedCarType === 'suv') {
-        drawSUVCar();
+    const currentCarImage = carImages[selectedCarType];
+    
+    if (currentCarImage && currentCarImage.complete) {
+        ctx.save();
+        ctx.translate(car.x + car.width / 2, car.y + car.height / 2);
+        ctx.rotate(Math.PI);
+        ctx.drawImage(currentCarImage, -car.width / 2, -car.height / 2, car.width, car.height);
+        ctx.restore();
+    } else {
+        const centerX = car.x + car.width / 2;
+        
+        if (selectedCarType === 'sports') {
+            drawSportsCar();
+        } else if (selectedCarType === 'sedan') {
+            drawSedanCar();
+        } else if (selectedCarType === 'truck') {
+            drawTruckCar();
+        } else if (selectedCarType === 'suv') {
+            drawSUVCar();
+        }
+    }
+    
+    if (isInvincible) {
+        ctx.strokeStyle = '#ffff00';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(car.x + car.width / 2, car.y + car.height / 2, car.width / 2 + 10, 0, Math.PI * 2);
+        ctx.stroke();
     }
     
     ctx.restore();
@@ -408,50 +468,126 @@ function drawSportsCar() {
     
     ctx.fillStyle = car.color;
     ctx.beginPath();
+    ctx.moveTo(car.x + 8, car.y + car.height);
+    ctx.lineTo(car.x + 8, car.y + 35);
+    ctx.quadraticCurveTo(car.x + 5, car.y + 25, car.x + 12, car.y + 15);
+    ctx.lineTo(car.x + 15, car.y + 12);
+    ctx.lineTo(car.x + car.width - 15, car.y + 12);
+    ctx.lineTo(car.x + car.width - 12, car.y + 15);
+    ctx.quadraticCurveTo(car.x + car.width - 5, car.y + 25, car.x + car.width - 8, car.y + 35);
+    ctx.lineTo(car.x + car.width - 8, car.y + car.height);
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.fillStyle = car.secondaryColor;
+    ctx.beginPath();
+    ctx.moveTo(car.x + 12, car.y + 18);
+    ctx.lineTo(car.x + 15, car.y + 15);
+    ctx.lineTo(car.x + car.width - 15, car.y + 15);
+    ctx.lineTo(car.x + car.width - 12, car.y + 18);
+    ctx.quadraticCurveTo(car.x + car.width / 2, car.y + 22, car.x + 12, car.y + 18);
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.fillStyle = '#2c3e50';
+    ctx.beginPath();
+    ctx.moveTo(car.x + 14, car.y + 20);
+    ctx.lineTo(car.x + 16, car.y + 18);
+    ctx.lineTo(car.x + car.width / 2 - 8, car.y + 18);
+    ctx.lineTo(car.x + car.width / 2 - 6, car.y + 20);
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.beginPath();
+    ctx.moveTo(car.x + car.width - 14, car.y + 20);
+    ctx.lineTo(car.x + car.width - 16, car.y + 18);
+    ctx.lineTo(car.x + car.width / 2 + 8, car.y + 18);
+    ctx.lineTo(car.x + car.width / 2 + 6, car.y + 20);
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.fillStyle = '#f1c40f';
+    ctx.beginPath();
+    ctx.moveTo(car.x + 10, car.y + 10);
+    ctx.lineTo(car.x + 6, car.y + 14);
+    ctx.lineTo(car.x + 12, car.y + 14);
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.beginPath();
+    ctx.moveTo(car.x + car.width - 10, car.y + 10);
+    ctx.lineTo(car.x + car.width - 6, car.y + 14);
+    ctx.lineTo(car.x + car.width - 12, car.y + 14);
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.fillStyle = '#e74c3c';
+    ctx.fillRect(car.x + 8, car.y + car.height - 10, 8, 6);
+    ctx.fillRect(car.x + car.width - 16, car.y + car.height - 10, 8, 6);
+    
+    ctx.fillStyle = '#3498db';
+    ctx.fillRect(car.x + 10, car.y + 30, car.width - 20, 3);
+}
+
+function drawSedanCar() {
+    ctx.fillStyle = car.color;
+    ctx.beginPath();
     ctx.moveTo(car.x + 5, car.y + car.height);
-    ctx.lineTo(car.x + 5, car.y + 20);
-    ctx.lineTo(car.x + 10, car.y + 10);
-    ctx.lineTo(car.x + car.width - 10, car.y + 10);
-    ctx.lineTo(car.x + car.width - 5, car.y + 20);
+    ctx.lineTo(car.x + 5, car.y + 25);
+    ctx.quadraticCurveTo(car.x + 3, car.y + 15, car.x + 10, car.y + 8);
+    ctx.lineTo(car.x + 15, car.y + 5);
+    ctx.lineTo(car.x + car.width - 15, car.y + 5);
+    ctx.lineTo(car.x + car.width - 10, car.y + 8);
+    ctx.quadraticCurveTo(car.x + car.width - 3, car.y + 15, car.x + car.width - 5, car.y + 25);
     ctx.lineTo(car.x + car.width - 5, car.y + car.height);
     ctx.closePath();
     ctx.fill();
     
     ctx.fillStyle = car.secondaryColor;
-    ctx.fillRect(car.x + 8, car.y + 25, car.width - 16, 15);
+    ctx.beginPath();
+    ctx.moveTo(car.x + 12, car.y + 10);
+    ctx.lineTo(car.x + 15, car.y + 7);
+    ctx.lineTo(car.x + car.width - 15, car.y + 7);
+    ctx.lineTo(car.x + car.width - 12, car.y + 10);
+    ctx.quadraticCurveTo(car.x + car.width / 2, car.y + 14, car.x + 12, car.y + 10);
+    ctx.closePath();
+    ctx.fill();
     
     ctx.fillStyle = '#2c3e50';
-    ctx.fillRect(car.x + 10, car.y + 28, 12, 8);
-    ctx.fillRect(car.x + car.width - 22, car.y + 28, 12, 8);
+    ctx.beginPath();
+    ctx.moveTo(car.x + 15, car.y + 12);
+    ctx.lineTo(car.x + 18, car.y + 9);
+    ctx.lineTo(car.x + car.width / 2 - 10, car.y + 9);
+    ctx.lineTo(car.x + car.width / 2 - 7, car.y + 12);
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.beginPath();
+    ctx.moveTo(car.x + car.width - 15, car.y + 12);
+    ctx.lineTo(car.x + car.width - 18, car.y + 9);
+    ctx.lineTo(car.x + car.width / 2 + 10, car.y + 9);
+    ctx.lineTo(car.x + car.width / 2 + 7, car.y + 12);
+    ctx.closePath();
+    ctx.fill();
     
     ctx.fillStyle = '#f1c40f';
-    ctx.fillRect(car.x + 5, car.y + 12, 8, 4);
-    ctx.fillRect(car.x + car.width - 13, car.y + 12, 8, 4);
+    ctx.beginPath();
+    ctx.moveTo(car.x + 12, car.y + 5);
+    ctx.lineTo(car.x + 8, car.y + 9);
+    ctx.lineTo(car.x + 14, car.y + 9);
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.beginPath();
+    ctx.moveTo(car.x + car.width - 12, car.y + 5);
+    ctx.lineTo(car.x + car.width - 8, car.y + 9);
+    ctx.lineTo(car.x + car.width - 14, car.y + 9);
+    ctx.closePath();
+    ctx.fill();
     
     ctx.fillStyle = '#e74c3c';
-    ctx.fillRect(car.x + 3, car.y + car.height - 8, 10, 5);
-    ctx.fillRect(car.x + car.width - 13, car.y + car.height - 8, 10, 5);
-}
-
-function drawSedanCar() {
-    ctx.fillStyle = car.color;
-    ctx.fillRect(car.x, car.y, car.width, car.height);
-    
-    ctx.fillStyle = car.secondaryColor;
-    ctx.fillRect(car.x + 5, car.y + 12, car.width - 10, 18);
-    ctx.fillRect(car.x + 5, car.y + car.height - 22, car.width - 10, 12);
-    
-    ctx.fillStyle = '#2c3e50';
-    ctx.fillRect(car.x + 8, car.y + 16, 14, 10);
-    ctx.fillRect(car.x + car.width - 22, car.y + 16, 14, 10);
-    
-    ctx.fillStyle = '#f1c40f';
-    ctx.fillRect(car.x + 4, car.y + 3, 10, 5);
-    ctx.fillRect(car.x + car.width - 14, car.y + 3, 10, 5);
-    
-    ctx.fillStyle = '#e74c3c';
-    ctx.fillRect(car.x + 4, car.y + car.height - 8, 10, 5);
-    ctx.fillRect(car.x + car.width - 14, car.y + car.height - 8, 10, 5);
+    ctx.fillRect(car.x + 5, car.y + car.height - 10, 10, 6);
+    ctx.fillRect(car.x + car.width - 15, car.y + car.height - 10, 10, 6);
     
     ctx.fillStyle = '#3498db';
     ctx.fillRect(car.x + 5, car.y + car.height - 22, car.width - 10, 3);
@@ -459,57 +595,139 @@ function drawSedanCar() {
 
 function drawTruckCar() {
     ctx.fillStyle = car.color;
-    ctx.fillRect(car.x, car.y, car.width, car.height);
+    ctx.beginPath();
+    ctx.moveTo(car.x + 8, car.y + car.height);
+    ctx.lineTo(car.x + 8, car.y + 40);
+    ctx.lineTo(car.x + 5, car.y + 30);
+    ctx.lineTo(car.x + 10, car.y + 15);
+    ctx.lineTo(car.x + 18, car.y + 8);
+    ctx.lineTo(car.x + car.width - 18, car.y + 8);
+    ctx.lineTo(car.x + car.width - 10, car.y + 15);
+    ctx.lineTo(car.x + car.width - 5, car.y + 30);
+    ctx.lineTo(car.x + car.width - 8, car.y + 40);
+    ctx.lineTo(car.x + car.width - 8, car.y + car.height);
+    ctx.closePath();
+    ctx.fill();
     
     ctx.fillStyle = car.secondaryColor;
-    ctx.fillRect(car.x + 8, car.y + 15, car.width - 16, 25);
-    ctx.fillRect(car.x + 8, car.y + car.height - 30, car.width - 16, 15);
+    ctx.beginPath();
+    ctx.moveTo(car.x + 15, car.y + 12);
+    ctx.lineTo(car.x + 20, car.y + 10);
+    ctx.lineTo(car.x + car.width - 20, car.y + 10);
+    ctx.lineTo(car.x + car.width - 15, car.y + 12);
+    ctx.quadraticCurveTo(car.x + car.width / 2, car.y + 16, car.x + 15, car.y + 12);
+    ctx.closePath();
+    ctx.fill();
     
     ctx.fillStyle = '#2c3e50';
-    ctx.fillRect(car.x + 10, car.y + 20, 16, 12);
-    ctx.fillRect(car.x + car.width - 26, car.y + 20, 16, 12);
+    ctx.beginPath();
+    ctx.moveTo(car.x + 18, car.y + 14);
+    ctx.lineTo(car.x + 22, car.y + 11);
+    ctx.lineTo(car.x + car.width / 2 - 12, car.y + 11);
+    ctx.lineTo(car.x + car.width / 2 - 8, car.y + 14);
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.beginPath();
+    ctx.moveTo(car.x + car.width - 18, car.y + 14);
+    ctx.lineTo(car.x + car.width - 22, car.y + 11);
+    ctx.lineTo(car.x + car.width / 2 + 12, car.y + 11);
+    ctx.lineTo(car.x + car.width / 2 + 8, car.y + 14);
+    ctx.closePath();
+    ctx.fill();
     
     ctx.fillStyle = '#f1c40f';
-    ctx.fillRect(car.x + 5, car.y + 3, 12, 6);
-    ctx.fillRect(car.x + car.width - 17, car.y + 3, 12, 6);
+    ctx.beginPath();
+    ctx.moveTo(car.x + 15, car.y + 8);
+    ctx.lineTo(car.x + 10, car.y + 13);
+    ctx.lineTo(car.x + 18, car.y + 13);
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.beginPath();
+    ctx.moveTo(car.x + car.width - 15, car.y + 8);
+    ctx.lineTo(car.x + car.width - 10, car.y + 13);
+    ctx.lineTo(car.x + car.width - 18, car.y + 13);
+    ctx.closePath();
+    ctx.fill();
     
     ctx.fillStyle = '#e74c3c';
-    ctx.fillRect(car.x + 5, car.y + car.height - 10, 12, 6);
-    ctx.fillRect(car.x + car.width - 17, car.y + car.height - 10, 12, 6);
+    ctx.fillRect(car.x + 8, car.y + car.height - 12, 12, 8);
+    ctx.fillRect(car.x + car.width - 20, car.y + car.height - 12, 12, 8);
     
     ctx.fillStyle = '#3498db';
-    ctx.fillRect(car.x + 8, car.y + car.height - 30, car.width - 16, 4);
+    ctx.fillRect(car.x + 10, car.y + car.height - 30, car.width - 20, 4);
     
     ctx.fillStyle = '#95a5a6';
-    ctx.fillRect(car.x + 10, car.y + 50, car.width - 20, 8);
-    ctx.fillRect(car.x + 10, car.y + 70, car.width - 20, 8);
+    ctx.fillRect(car.x + 12, car.y + 50, car.width - 24, 8);
+    ctx.fillRect(car.x + 12, car.y + 70, car.width - 24, 8);
 }
 
 function drawSUVCar() {
     ctx.fillStyle = car.color;
-    ctx.fillRect(car.x, car.y, car.width, car.height);
+    ctx.beginPath();
+    ctx.moveTo(car.x + 6, car.y + car.height);
+    ctx.lineTo(car.x + 6, car.y + 30);
+    ctx.quadraticCurveTo(car.x + 4, car.y + 18, car.x + 12, car.y + 10);
+    ctx.lineTo(car.x + 16, car.y + 6);
+    ctx.lineTo(car.x + car.width - 16, car.y + 6);
+    ctx.lineTo(car.x + car.width - 12, car.y + 10);
+    ctx.quadraticCurveTo(car.x + car.width - 4, car.y + 18, car.x + car.width - 6, car.y + 30);
+    ctx.lineTo(car.x + car.width - 6, car.y + car.height);
+    ctx.closePath();
+    ctx.fill();
     
     ctx.fillStyle = car.secondaryColor;
-    ctx.fillRect(car.x + 6, car.y + 14, car.width - 12, 20);
-    ctx.fillRect(car.x + 6, car.y + car.height - 24, car.width - 12, 14);
+    ctx.beginPath();
+    ctx.moveTo(car.x + 14, car.y + 12);
+    ctx.lineTo(car.x + 18, car.y + 8);
+    ctx.lineTo(car.x + car.width - 18, car.y + 8);
+    ctx.lineTo(car.x + car.width - 14, car.y + 12);
+    ctx.quadraticCurveTo(car.x + car.width / 2, car.y + 16, car.x + 14, car.y + 12);
+    ctx.closePath();
+    ctx.fill();
     
     ctx.fillStyle = '#2c3e50';
-    ctx.fillRect(car.x + 9, car.y + 18, 13, 10);
-    ctx.fillRect(car.x + car.width - 22, car.y + 18, 13, 10);
+    ctx.beginPath();
+    ctx.moveTo(car.x + 17, car.y + 14);
+    ctx.lineTo(car.x + 20, car.y + 10);
+    ctx.lineTo(car.x + car.width / 2 - 10, car.y + 10);
+    ctx.lineTo(car.x + car.width / 2 - 7, car.y + 14);
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.beginPath();
+    ctx.moveTo(car.x + car.width - 17, car.y + 14);
+    ctx.lineTo(car.x + car.width - 20, car.y + 10);
+    ctx.lineTo(car.x + car.width / 2 + 10, car.y + 10);
+    ctx.lineTo(car.x + car.width / 2 + 7, car.y + 14);
+    ctx.closePath();
+    ctx.fill();
     
     ctx.fillStyle = '#f1c40f';
-    ctx.fillRect(car.x + 4, car.y + 3, 10, 5);
-    ctx.fillRect(car.x + car.width - 14, car.y + 3, 10, 5);
+    ctx.beginPath();
+    ctx.moveTo(car.x + 13, car.y + 6);
+    ctx.lineTo(car.x + 9, car.y + 10);
+    ctx.lineTo(car.x + 15, car.y + 10);
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.beginPath();
+    ctx.moveTo(car.x + car.width - 13, car.y + 6);
+    ctx.lineTo(car.x + car.width - 9, car.y + 10);
+    ctx.lineTo(car.x + car.width - 15, car.y + 10);
+    ctx.closePath();
+    ctx.fill();
     
     ctx.fillStyle = '#e74c3c';
-    ctx.fillRect(car.x + 4, car.y + car.height - 8, 10, 5);
-    ctx.fillRect(car.x + car.width - 14, car.y + car.height - 8, 10, 5);
+    ctx.fillRect(car.x + 6, car.y + car.height - 10, 10, 6);
+    ctx.fillRect(car.x + car.width - 16, car.y + car.height - 10, 10, 6);
     
     ctx.fillStyle = '#3498db';
     ctx.fillRect(car.x + 6, car.y + car.height - 24, car.width - 12, 3);
     
     ctx.fillStyle = '#7f8c8d';
-    ctx.fillRect(car.x + 8, car.y + 45, car.width - 16, 6);
+    ctx.fillRect(car.x + 10, car.y + 45, car.width - 20, 6);
 }
 
 function createObstacle() {
@@ -536,6 +754,9 @@ function createObstacle() {
     const obstacleHeight = 75;
     const obstacleSpeed = 0.5 + Math.random() * 0.5;
     
+    const carTypes = ['sports', 'sedan', 'truck', 'suv', 'car4', 'car5', 'car6', 'car7'];
+    const randomCarType = carTypes[Math.floor(Math.random() * carTypes.length)];
+    
     const obstacle = {
         x: 50 + lane * LANE_WIDTH + (LANE_WIDTH - obstacleWidth) / 2,
         y: -obstacleHeight,
@@ -550,7 +771,8 @@ function createObstacle() {
         targetLane: lane,
         isChangingLane: false,
         turnSignalTimer: 0,
-        willChangeLane: false
+        willChangeLane: false,
+        carType: randomCarType
     };
     
     obstacles.push(obstacle);
@@ -608,20 +830,57 @@ function drawObstacles() {
 function drawCarObstacle(obstacle) {
     ctx.save();
     
-    ctx.fillStyle = obstacle.color;
-    ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+    const obstacleCarImage = carImages[obstacle.carType];
     
-    ctx.fillStyle = '#2c3e50';
-    ctx.fillRect(obstacle.x + 5, obstacle.y + 15, obstacle.width - 10, 15);
-    ctx.fillRect(obstacle.x + 5, obstacle.y + obstacle.height - 25, obstacle.width - 10, 10);
-    
-    ctx.fillStyle = '#f1c40f';
-    ctx.fillRect(obstacle.x + 2, obstacle.y + 2, 8, 4);
-    ctx.fillRect(obstacle.x + obstacle.width - 10, obstacle.y + 2, 8, 4);
-    
-    ctx.fillStyle = '#e74c3c';
-    ctx.fillRect(obstacle.x + 2, obstacle.y + obstacle.height - 8, 8, 4);
-    ctx.fillRect(obstacle.x + obstacle.width - 10, obstacle.y + obstacle.height - 8, 8, 4);
+    if (obstacleCarImage && obstacleCarImage.complete) {
+        ctx.save();
+        ctx.translate(obstacle.x + obstacle.width / 2, obstacle.y + obstacle.height / 2);
+        ctx.rotate(Math.PI);
+        ctx.drawImage(obstacleCarImage, -obstacle.width / 2, -obstacle.height / 2, obstacle.width, obstacle.height);
+        ctx.restore();
+    } else {
+        ctx.fillStyle = obstacle.color;
+        ctx.beginPath();
+        ctx.moveTo(obstacle.x + 5, obstacle.y + obstacle.height);
+        ctx.lineTo(obstacle.x + 5, obstacle.y + 25);
+        ctx.quadraticCurveTo(obstacle.x + 3, obstacle.y + 15, obstacle.x + 10, obstacle.y + 8);
+        ctx.lineTo(obstacle.x + 15, obstacle.y + 5);
+        ctx.lineTo(obstacle.x + obstacle.width - 15, obstacle.y + 5);
+        ctx.lineTo(obstacle.x + obstacle.width - 10, obstacle.y + 8);
+        ctx.quadraticCurveTo(obstacle.x + obstacle.width - 3, obstacle.y + 15, obstacle.x + obstacle.width - 5, obstacle.y + 25);
+        ctx.lineTo(obstacle.x + obstacle.width - 5, obstacle.y + obstacle.height);
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.fillStyle = '#2c3e50';
+        ctx.beginPath();
+        ctx.moveTo(obstacle.x + 12, obstacle.y + 10);
+        ctx.lineTo(obstacle.x + 15, obstacle.y + 7);
+        ctx.lineTo(obstacle.x + obstacle.width - 15, obstacle.y + 7);
+        ctx.lineTo(obstacle.x + obstacle.width - 12, obstacle.y + 10);
+        ctx.quadraticCurveTo(obstacle.x + obstacle.width / 2, obstacle.y + 14, obstacle.x + 12, obstacle.y + 10);
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.fillStyle = '#f1c40f';
+        ctx.beginPath();
+        ctx.moveTo(obstacle.x + 12, obstacle.y + 5);
+        ctx.lineTo(obstacle.x + 8, obstacle.y + 9);
+        ctx.lineTo(obstacle.x + 14, obstacle.y + 9);
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.moveTo(obstacle.x + obstacle.width - 12, obstacle.y + 5);
+        ctx.lineTo(obstacle.x + obstacle.width - 8, obstacle.y + 9);
+        ctx.lineTo(obstacle.x + obstacle.width - 14, obstacle.y + 9);
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.fillStyle = '#e74c3c';
+        ctx.fillRect(obstacle.x + 5, obstacle.y + obstacle.height - 10, 10, 6);
+        ctx.fillRect(obstacle.x + obstacle.width - 15, obstacle.y + obstacle.height - 10, 10, 6);
+    }
     
     if (obstacle.willChangeLane) {
         ctx.fillStyle = '#ff0000';
@@ -648,6 +907,124 @@ function drawBarrierObstacle(obstacle) {
     ctx.fillText('⚠', obstacle.x + obstacle.width / 2, obstacle.y + obstacle.height / 2 + 7);
     
     ctx.restore();
+}
+
+function createPowerUp() {
+    const lanes = [0, 1, 2, 3];
+    const lane = lanes[Math.floor(Math.random() * lanes.length)];
+    
+    const powerUpWidth = 30;
+    const powerUpHeight = 30;
+    const powerUpSpeed = 2 + car.speed * 0.5;
+    
+    const powerUpTypes = ['shield', 'shield', 'speed', 'score'];
+    const powerUpType = powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)];
+    
+    const powerUp = {
+        x: 50 + lane * LANE_WIDTH + (LANE_WIDTH - powerUpWidth) / 2,
+        y: -powerUpHeight,
+        width: powerUpWidth,
+        height: powerUpHeight,
+        type: powerUpType,
+        speed: powerUpSpeed
+    };
+    
+    powerUps.push(powerUp);
+}
+
+function updatePowerUps() {
+    powerUps.forEach((powerUp, index) => {
+        powerUp.y += powerUp.speed;
+        
+        if (powerUp.y > canvas.height) {
+            powerUps.splice(index, 1);
+        }
+    });
+}
+
+function drawPowerUps() {
+    powerUps.forEach(powerUp => {
+        ctx.save();
+        
+        if (powerUp.type === 'shield') {
+            ctx.fillStyle = '#00ff00';
+            ctx.beginPath();
+            ctx.arc(powerUp.x + powerUp.width / 2, powerUp.y + powerUp.height / 2, powerUp.width / 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 20px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('🛡', powerUp.x + powerUp.width / 2, powerUp.y + powerUp.height / 2 + 7);
+        } else if (powerUp.type === 'speed') {
+            ctx.fillStyle = '#ffff00';
+            ctx.beginPath();
+            ctx.arc(powerUp.x + powerUp.width / 2, powerUp.y + powerUp.height / 2, powerUp.width / 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 20px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('⚡', powerUp.x + powerUp.width / 2, powerUp.y + powerUp.height / 2 + 7);
+        } else if (powerUp.type === 'score') {
+            ctx.fillStyle = '#ff00ff';
+            ctx.beginPath();
+            ctx.arc(powerUp.x + powerUp.width / 2, powerUp.y + powerUp.height / 2, powerUp.width / 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 20px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('⭐', powerUp.x + powerUp.width / 2, powerUp.y + powerUp.height / 2 + 7);
+        }
+        
+        ctx.restore();
+    });
+}
+
+function checkPowerUpCollision() {
+    powerUps.forEach((powerUp, index) => {
+        if (car.x < powerUp.x + powerUp.width &&
+            car.x + car.width > powerUp.x &&
+            car.y < powerUp.y + powerUp.height &&
+            car.y + car.height > powerUp.y) {
+            
+            if (powerUp.type === 'shield') {
+                collisionResistance++;
+            } else if (powerUp.type === 'speed') {
+                isInvincible = true;
+                invincibleTimer = 180;
+            } else if (powerUp.type === 'score') {
+                scoreMultiplier = 2;
+                scoreMultiplierTimer = 300;
+            }
+            
+            playPowerUpSound();
+            powerUps.splice(index, 1);
+        }
+    });
+}
+
+function playPowerUpSound() {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(1760, audioContext.currentTime + 0.1);
+    
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.2);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.2);
 }
 
 function updateObstacles() {
@@ -693,6 +1070,10 @@ function updateObstacles() {
 }
 
 function checkCollision() {
+    if (isInvincible) {
+        return false;
+    }
+    
     for (let obstacle of obstacles) {
         if (car.x < obstacle.x + obstacle.width &&
             car.x + car.width > obstacle.x &&
@@ -730,11 +1111,29 @@ function updateCar() {
 }
 
 function updateScore() {
-    score += Math.floor(car.speed * 0.2) + 1;
+    score += Math.floor((car.speed * 0.2 + 1) * scoreMultiplier);
     const lang = translations[currentLang];
     document.getElementById('score').textContent = lang['score'].replace('0', score);
     document.getElementById('speed').textContent = lang['speed'].replace('0', Math.floor(car.speed * 10));
     document.getElementById('shield').textContent = lang['shield'].replace('0', collisionResistance);
+    
+    const invincibleEl = document.getElementById('invincible');
+    if (isInvincible) {
+        invincibleEl.style.display = 'block';
+        const remainingTime = Math.ceil(invincibleTimer / 60);
+        invincibleEl.textContent = lang['invincible'].replace('3s', `${remainingTime}s`);
+    } else {
+        invincibleEl.style.display = 'none';
+    }
+    
+    const multiplierEl = document.getElementById('multiplier');
+    if (scoreMultiplier > 1) {
+        multiplierEl.style.display = 'block';
+        const remainingTime = Math.ceil(scoreMultiplierTimer / 60);
+        multiplierEl.textContent = lang['multiplier'].replace('5s', `${remainingTime}s`);
+    } else {
+        multiplierEl.style.display = 'none';
+    }
 }
 
 function gameOver() {
@@ -803,10 +1202,35 @@ function gameLoop() {
         barrierTimer = 0;
     }
     
+    powerUpTimer++;
+    if (powerUpTimer >= powerUpInterval) {
+        createPowerUp();
+        powerUpTimer = 0;
+    }
+    
+    if (isInvincible) {
+        invincibleTimer--;
+        if (invincibleTimer <= 0) {
+            isInvincible = false;
+        }
+    }
+    
+    if (scoreMultiplier > 1) {
+        scoreMultiplierTimer--;
+        if (scoreMultiplierTimer <= 0) {
+            scoreMultiplier = 1;
+        }
+    }
+    
     updateObstacles();
     drawObstacles();
     
+    updatePowerUps();
+    drawPowerUps();
+    
     updateScore();
+    
+    checkPowerUpCollision();
     
     if (checkCollision()) {
         isGameOver = true;
@@ -846,6 +1270,10 @@ function startGame() {
     collisionResistance = carType.collisionResistance;
     screenShake = 0;
     collisionFlash = 0;
+    isInvincible = false;
+    invincibleTimer = 0;
+    scoreMultiplier = 1;
+    scoreMultiplierTimer = 0;
     
     car.x = canvas.width / 2 - car.width / 2;
     car.y = canvas.height - car.height - 50;
@@ -856,6 +1284,8 @@ function startGame() {
     obstacleInterval = 85;
     barrierTimer = 0;
     barrierType = 'full';
+    powerUps = [];
+    powerUpTimer = 0;
     
     document.getElementById('start-screen').style.display = 'none';
     document.getElementById('game-over-screen').style.display = 'none';
