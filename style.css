@@ -53,7 +53,7 @@ body {
 }
 
 #start-screen button, #game-over-screen button {
-    margin-top: 30px;
+    margin: 5px 10px;
     padding: 15px 40px;
     font-size: 20px;
     background: linear-gradient(45deg, #00ffff, #0080ff);
@@ -85,11 +85,29 @@ body {
     pointer-events: none;
 }
 
-#score, #speed {
+#score, #speed, #shield {
     background: rgba(0, 0, 0, 0.6);
     padding: 10px 20px;
     border-radius: 20px;
     border: 2px solid #00ffff;
+}
+
+#pause-btn {
+    background: rgba(0, 0, 0, 0.6);
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 2px solid #00ffff;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    pointer-events: auto;
+    transition: all 0.3s ease;
+}
+
+#pause-btn:hover {
+    background: rgba(0, 255, 255, 0.3);
+    transform: scale(1.05);
 }
 
 #game-canvas {
@@ -99,6 +117,33 @@ body {
 
 #game-over-screen {
     display: none;
+}
+
+#language-selection {
+    margin: 15px 0;
+    text-align: center;
+}
+
+.lang-btn {
+    padding: 8px 20px;
+    font-size: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 2px solid #00ffff;
+    border-radius: 20px;
+    cursor: pointer;
+    margin: 0 10px;
+    transition: all 0.3s ease;
+}
+
+.lang-btn:hover {
+    background: rgba(0, 255, 255, 0.2);
+    transform: scale(1.05);
+}
+
+.lang-btn.active {
+    background: linear-gradient(45deg, #00ffff, #0080ff);
+    color: white;
 }
 
 #car-selection {
@@ -142,26 +187,32 @@ body {
 }
 
 .car-preview {
-    width: 80px;
-    height: 50px;
     border-radius: 8px;
     margin-bottom: 10px;
     position: relative;
 }
 
 .car-preview.sports {
+    width: 60px;
+    height: 40px;
     background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
 }
 
 .car-preview.sedan {
+    width: 70px;
+    height: 50px;
     background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
 }
 
 .car-preview.truck {
+    width: 100px;
+    height: 70px;
     background: linear-gradient(135deg, #ffd93d 0%, #ff9500 100%);
 }
 
 .car-preview.suv {
+    width: 80px;
+    height: 55px;
     background: linear-gradient(135deg, #6c5ce7 0%, #4834d4 100%);
 }
 
