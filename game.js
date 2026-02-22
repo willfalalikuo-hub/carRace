@@ -277,8 +277,8 @@ const translations = {
         'score': '分数: 0',
         'speed': '速度: 0',
         'shield': '护盾: 0',
-        'invincible': '无敌: 3s',
-        'multiplier': '分数翻倍: 5s',
+        'invincible': '无敌: 6s',
+        'multiplier': '分数翻倍: 10s',
         'pause': '暂停 (P)',
         'game-over': '游戏结束',
         'final-score': '最终分数: 0',
@@ -303,8 +303,8 @@ const translations = {
         'score': 'Score: 0',
         'speed': 'Speed: 0',
         'shield': 'Shield: 0',
-        'invincible': 'Invincible: 3s',
-        'multiplier': 'Score x2: 5s',
+        'invincible': 'Invincible: 6s',
+        'multiplier': 'Score x3: 10s',
         'pause': 'Pause (P)',
         'game-over': 'Game Over',
         'final-score': 'Final Score: 0',
@@ -993,10 +993,10 @@ function checkPowerUpCollision() {
                 collisionResistance++;
             } else if (powerUp.type === 'speed') {
                 isInvincible = true;
-                invincibleTimer = 180;
+                invincibleTimer = 360;
             } else if (powerUp.type === 'score') {
-                scoreMultiplier = 2;
-                scoreMultiplierTimer = 300;
+                scoreMultiplier = 3;
+                scoreMultiplierTimer = 600;
             }
             
             playPowerUpSound();
