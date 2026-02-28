@@ -10,8 +10,9 @@ body {
     align-items: center;
     min-height: 100vh;
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    font-family: 'Arial', sans-serif;
+    font-family: 'ZCOOL QingKe HuangYou', 'Press Start 2P', cursive;
     overflow: hidden;
+    image-rendering: pixelated;
 }
 
 #game-container {
@@ -41,6 +42,7 @@ body {
 
 #start-screen h1, #game-over-screen h1 {
     font-size: 48px;
+    font-family: 'ZCOOL QingKe HuangYou', 'Press Start 2P', cursive;
     margin-bottom: 20px;
     text-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
     color: #00ffff;
@@ -48,6 +50,7 @@ body {
 
 #start-screen p, #game-over-screen p {
     font-size: 18px;
+    font-family: 'ZCOOL QingKe HuangYou', 'Press Start 2P', cursive;
     margin: 10px 0;
     color: #ccc;
 }
@@ -56,18 +59,20 @@ body {
     margin: 5px 10px;
     padding: 15px 40px;
     font-size: 20px;
+    font-family: 'ZCOOL QingKe HuangYou', 'Press Start 2P', cursive;
     background: linear-gradient(45deg, #00ffff, #0080ff);
     color: white;
-    border: none;
-    border-radius: 30px;
+    border: 4px solid #00ffff;
+    border-radius: 0;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+    box-shadow: 4px 4px 0px #000;
+    image-rendering: pixelated;
 }
 
 #start-screen button:hover, #game-over-screen button:hover {
-    transform: scale(1.1);
-    box-shadow: 0 0 30px rgba(0, 255, 255, 0.8);
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px #000;
 }
 
 #game-ui {
@@ -85,29 +90,35 @@ body {
     pointer-events: none;
 }
 
-#score, #speed, #shield {
-    background: rgba(0, 0, 0, 0.6);
-    padding: 10px 20px;
-    border-radius: 20px;
-    border: 2px solid #00ffff;
+#score, #speed, #shield, #invincible, #multiplier {
+    background: rgba(0, 0, 0, 0.8);
+    padding: 8px 16px;
+    border: 4px solid #00ffff;
+    font-family: 'ZCOOL QingKe HuangYou', 'Press Start 2P', cursive;
+    font-size: 16px;
+    color: #00ffff;
+    box-shadow: 4px 4px 0px #000;
+    image-rendering: pixelated;
 }
 
 #pause-btn {
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.8);
     padding: 8px 16px;
-    border-radius: 20px;
-    border: 2px solid #00ffff;
+    border: 4px solid #00ffff;
     color: white;
-    font-size: 16px;
-    font-weight: bold;
+    font-family: 'ZCOOL QingKe HuangYou', 'Press Start 2P', cursive;
+    font-size: 14px;
     cursor: pointer;
     pointer-events: auto;
     transition: all 0.3s ease;
+    box-shadow: 4px 4px 0px #000;
+    image-rendering: pixelated;
 }
 
 #pause-btn:hover {
     background: rgba(0, 255, 255, 0.3);
-    transform: scale(1.05);
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px #000;
 }
 
 #game-canvas {
@@ -127,23 +138,28 @@ body {
 .lang-btn {
     padding: 8px 20px;
     font-size: 16px;
+    font-family: 'Press Start 2P', cursive;
     background: rgba(255, 255, 255, 0.1);
     color: white;
-    border: 2px solid #00ffff;
-    border-radius: 20px;
+    border: 4px solid #00ffff;
+    border-radius: 0;
     cursor: pointer;
     margin: 0 10px;
     transition: all 0.3s ease;
+    box-shadow: 4px 4px 0px #000;
+    image-rendering: pixelated;
 }
 
 .lang-btn:hover {
     background: rgba(0, 255, 255, 0.2);
-    transform: scale(1.05);
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px #000;
 }
 
 .lang-btn.active {
     background: linear-gradient(45deg, #00ffff, #0080ff);
     color: white;
+    box-shadow: 4px 4px 0px #000;
 }
 
 #car-selection {
@@ -153,6 +169,7 @@ body {
 
 #car-selection p {
     font-size: 20px;
+    font-family: 'ZCOOL QingKe HuangYou', 'Press Start 2P', cursive;
     color: #00ffff;
     margin-bottom: 15px;
 }
@@ -219,12 +236,14 @@ body {
 .car-option span {
     color: white;
     font-size: 16px;
+    font-family: 'ZCOOL QingKe HuangYou', 'Press Start 2P', cursive;
     font-weight: bold;
 }
 
 .car-ability {
     margin-top: 8px;
     font-size: 12px;
+    font-family: 'ZCOOL QingKe HuangYou', 'Press Start 2P', cursive;
     color: #aaa;
     text-align: center;
     max-width: 120px;

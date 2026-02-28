@@ -162,6 +162,7 @@ function playDrum(type) {
 function playCollisionSound() {
     if (!audioContext) return;
     
+    // Main collision sound
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
     
@@ -169,14 +170,31 @@ function playCollisionSound() {
     gainNode.connect(audioContext.destination);
     
     oscillator.type = 'sawtooth';
-    oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
-    oscillator.frequency.exponentialRampToValueAtTime(50, audioContext.currentTime + 0.3);
+    oscillator.frequency.setValueAtTime(300, audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(50, audioContext.currentTime + 0.4);
     
-    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.3);
+    gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.4);
     
     oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.3);
+    oscillator.stop(audioContext.currentTime + 0.4);
+    
+    // Secondary impact sound
+    const oscillator2 = audioContext.createOscillator();
+    const gainNode2 = audioContext.createGain();
+    
+    oscillator2.connect(gainNode2);
+    gainNode2.connect(audioContext.destination);
+    
+    oscillator2.type = 'square';
+    oscillator2.frequency.setValueAtTime(120, audioContext.currentTime + 0.1);
+    oscillator2.frequency.setValueAtTime(80, audioContext.currentTime + 0.2);
+    
+    gainNode2.gain.setValueAtTime(0.2, audioContext.currentTime + 0.1);
+    gainNode2.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.3);
+    
+    oscillator2.start(audioContext.currentTime + 0.1);
+    oscillator2.stop(audioContext.currentTime + 0.3);
 }
 
 function startBackgroundMusic() {
@@ -255,6 +273,10 @@ let isInvincible = false;
 let invincibleTimer = 0;
 let scoreMultiplier = 1;
 let scoreMultiplierTimer = 0;
+
+let particles = [];
+let screenShakeAmount = 0;
+let colorShiftAmount = 0;
 
 let selectedCarType = 'sedan';
 
@@ -395,6 +417,25 @@ function drawRoad() {
     ctx.fillStyle = '#636e72';
     ctx.fillRect(50, 0, LANE_WIDTH * 4, canvas.height);
     
+    for (let y = 0; y < canvas.height; y += 20) {
+        for (let x = 50; x < 50 + LANE_WIDTH * 4; x += 20) {
+            if ((x + y + Math.floor(roadOffset)) % 40 === 0) {
+                ctx.fillStyle = '#5a6266';
+                ctx.fillRect(x, y, 2, 2);
+            }
+        }
+    }
+    
+    for (let y = 0; y < canvas.height; y += 30) {
+        for (let x = 50; x < 50 + LANE_WIDTH * 4; x += 30) {
+            if ((x + y + Math.floor(roadOffset)) % 60 === 0) {
+                ctx.fillStyle = '#4a5256';
+                ctx.fillRect(x + 5, y + 5, 4, 4);
+                ctx.fillRect(x + 15, y + 15, 3, 3);
+            }
+        }
+    }
+    
     ctx.setLineDash([40, 30]);
     ctx.strokeStyle = '#dfe6e9';
     ctx.lineWidth = 4;
@@ -421,8 +462,22 @@ function drawRoad() {
     ctx.stroke();
 }
 
+function createRoadDecoration() {
+    // Removed manhole decoration
+}
+
+function updateRoadDecorations() {
+    // Removed road decorations
+}
+
+function drawRoadDecorations() {
+    // Removed road decorations
+}
+
 function drawCar() {
     ctx.save();
+    
+    ctx.imageSmoothingEnabled = false;
     
     if (isInvincible) {
         ctx.globalAlpha = 0.5 + Math.sin(Date.now() / 100) * 0.5;
@@ -884,7 +939,7 @@ function drawCarObstacle(obstacle) {
     
     if (obstacle.willChangeLane) {
         ctx.fillStyle = '#ff0000';
-        ctx.font = 'bold 48px Arial';
+        ctx.font = 'bold 48px "ZCOOL QingKe HuangYou", "Press Start 2P", cursive';
         ctx.textAlign = 'center';
         ctx.fillText('!', obstacle.x + obstacle.width / 2, obstacle.y - 10);
     }
@@ -902,7 +957,7 @@ function drawBarrierObstacle(obstacle) {
     ctx.fillRect(obstacle.x + 5, obstacle.y + 5, obstacle.width - 10, obstacle.height - 10);
     
     ctx.fillStyle = '#fff';
-    ctx.font = 'bold 20px Arial';
+    ctx.font = 'bold 20px "ZCOOL QingKe HuangYou", "Press Start 2P", cursive';
     ctx.textAlign = 'center';
     ctx.fillText('⚠', obstacle.x + obstacle.width / 2, obstacle.y + obstacle.height / 2 + 7);
     
@@ -953,7 +1008,7 @@ function drawPowerUps() {
             ctx.fill();
             
             ctx.fillStyle = '#fff';
-            ctx.font = 'bold 20px Arial';
+            ctx.font = 'bold 20px "ZCOOL QingKe HuangYou", "Press Start 2P", cursive';
             ctx.textAlign = 'center';
             ctx.fillText('🛡', powerUp.x + powerUp.width / 2, powerUp.y + powerUp.height / 2 + 7);
         } else if (powerUp.type === 'speed') {
@@ -963,7 +1018,7 @@ function drawPowerUps() {
             ctx.fill();
             
             ctx.fillStyle = '#fff';
-            ctx.font = 'bold 20px Arial';
+            ctx.font = 'bold 20px "ZCOOL QingKe HuangYou", "Press Start 2P", cursive';
             ctx.textAlign = 'center';
             ctx.fillText('⚡', powerUp.x + powerUp.width / 2, powerUp.y + powerUp.height / 2 + 7);
         } else if (powerUp.type === 'score') {
@@ -973,7 +1028,7 @@ function drawPowerUps() {
             ctx.fill();
             
             ctx.fillStyle = '#fff';
-            ctx.font = 'bold 20px Arial';
+            ctx.font = 'bold 20px "ZCOOL QingKe HuangYou", "Press Start 2P", cursive';
             ctx.textAlign = 'center';
             ctx.fillText('⭐', powerUp.x + powerUp.width / 2, powerUp.y + powerUp.height / 2 + 7);
         }
@@ -1000,6 +1055,7 @@ function checkPowerUpCollision() {
             }
             
             playPowerUpSound();
+            createPowerUpParticles(powerUp.x + powerUp.width / 2, powerUp.y + powerUp.height / 2);
             powerUps.splice(index, 1);
         }
     });
@@ -1080,8 +1136,10 @@ function checkCollision() {
             car.y < obstacle.y + obstacle.height &&
             car.y + car.height > obstacle.y) {
             playCollisionSound();
-            screenShake = 15;
-            collisionFlash = 0.6;
+            screenShake = 25;
+            screenShakeAmount = 30;
+            collisionFlash = 0.8;
+            createExplosionParticles(car.x + car.width / 2, car.y + car.height / 2);
             if (collisionResistance > 0) {
                 collisionResistance--;
                 obstacles.splice(obstacles.indexOf(obstacle), 1);
@@ -1091,6 +1149,81 @@ function checkCollision() {
         }
     }
     return false;
+}
+
+function createExplosionParticles(x, y) {
+    const colors = ['#ff0000', '#ff6600', '#ffff00', '#ffffff'];
+    for (let i = 0; i < 20; i++) {
+        particles.push({
+            x: x,
+            y: y,
+            vx: (Math.random() - 0.5) * 10,
+            vy: (Math.random() - 0.5) * 10,
+            size: Math.random() * 8 + 4,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            life: 60
+        });
+    }
+}
+
+function createPowerUpParticles(x, y) {
+    const colors = ['#00ff00', '#ffff00', '#ff00ff'];
+    for (let i = 0; i < 15; i++) {
+        particles.push({
+            x: x,
+            y: y,
+            vx: (Math.random() - 0.5) * 6,
+            vy: (Math.random() - 0.5) * 6,
+            size: Math.random() * 6 + 2,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            life: 40
+        });
+    }
+}
+
+function updateParticles() {
+    particles.forEach((particle, index) => {
+        particle.x += particle.vx;
+        particle.y += particle.vy;
+        particle.life--;
+        particle.size *= 0.98;
+        
+        if (particle.life <= 0) {
+            particles.splice(index, 1);
+        }
+    });
+}
+
+function drawParticles() {
+    particles.forEach(particle => {
+        ctx.fillStyle = particle.color;
+        ctx.fillRect(
+            Math.floor(particle.x - particle.size / 2),
+            Math.floor(particle.y - particle.size / 2),
+            Math.floor(particle.size),
+            Math.floor(particle.size)
+        );
+    });
+}
+
+function applyScreenEffects() {
+    if (screenShakeAmount > 0) {
+        const shakeX = (Math.random() - 0.5) * screenShakeAmount;
+        const shakeY = (Math.random() - 0.5) * screenShakeAmount;
+        ctx.translate(shakeX, shakeY);
+        screenShakeAmount *= 0.9;
+        if (screenShakeAmount < 0.5) screenShakeAmount = 0;
+    }
+    
+    if (Math.random() < 0.02) {
+        colorShiftAmount = (Math.random() - 0.5) * 10;
+    } else {
+        colorShiftAmount *= 0.95;
+    }
+    
+    if (Math.abs(colorShiftAmount) > 0.5) {
+        ctx.translate(colorShiftAmount, 0);
+    }
 }
 
 function updateCar() {
@@ -1152,6 +1285,7 @@ function gameLoop() {
         ctx.save();
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         drawRoad();
+        drawRoadDecorations();
         drawCar();
         drawObstacles();
         
@@ -1160,7 +1294,7 @@ function gameLoop() {
         
         const lang = translations[currentLang];
         ctx.fillStyle = '#fff';
-        ctx.font = 'bold 48px Arial';
+        ctx.font = 'bold 48px "ZCOOL QingKe HuangYou", "Press Start 2P", cursive';
         ctx.textAlign = 'center';
         ctx.fillText(lang['pause'].replace('(P)', ''), canvas.width / 2, canvas.height / 2);
         
@@ -1171,13 +1305,7 @@ function gameLoop() {
     
     ctx.save();
     
-    if (screenShake > 0) {
-        const shakeX = (Math.random() - 0.5) * screenShake * 2;
-        const shakeY = (Math.random() - 0.5) * screenShake * 2;
-        ctx.translate(shakeX, shakeY);
-        screenShake *= 0.9;
-        if (screenShake < 0.5) screenShake = 0;
-    }
+    applyScreenEffects();
     
     ctx.clearRect(-10, -10, canvas.width + 20, canvas.height + 20);
     
@@ -1228,6 +1356,9 @@ function gameLoop() {
     updatePowerUps();
     drawPowerUps();
     
+    updateParticles();
+    drawParticles();
+    
     updateScore();
     
     checkPowerUpCollision();
@@ -1270,6 +1401,9 @@ function startGame() {
     collisionResistance = carType.collisionResistance;
     screenShake = 0;
     collisionFlash = 0;
+    screenShakeAmount = 0;
+    colorShiftAmount = 0;
+    particles = [];
     isInvincible = false;
     invincibleTimer = 0;
     scoreMultiplier = 1;
